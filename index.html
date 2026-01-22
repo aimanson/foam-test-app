@@ -3,546 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Foam Concentrate Testing System</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>Foam Induction Testing System</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .step-transition-enter-active, .step-transition-leave-active { transition: opacity 0.3s ease; }
+        .step-transition-enter-from, .step-transition-leave-to { opacity: 0; }
+    </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4">
+    <div id="app" class="max-w-4xl mx-auto">
+        
+        <div class="bg-white rounded-lg shadow-xl p-6 mb-4">
+            <h1 class="text-3xl font-bold text-indigo-900 mb-2">Foam Concentrate Testing System</h1>
+            <p class="text-gray-600 italic">Professional induction percentage calculator based on Test Kit Manual</p>
+        </div>
 
-    <script type="text/babel">
-        const { useState } = React;
-        const AlertCircle = ({ className, size }) => (
-            <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-        );
-
-        const CheckCircle = ({ className, size }) => (
-            <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-        );
-
-        const Download = ({ size }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-        );
-
-        const Calculator = ({ size }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="4" y="2" width="16" height="20" rx="2"/>
-                <line x1="8" y1="6" x2="16" y2="6"/>
-                <line x1="16" y1="14" x2="16" y2="18"/>
-                <line x1="8" y1="18" x2="12" y2="18"/>
-                <line x1="8" y1="14" x2="12" y2="14"/>
-            </svg>
-        );
-
-        const FoamTestingApp = () => {
-            const [step, setStep] = useState(1);
-            const [systemType, setSystemType] = useState('');
-            const [testData, setTestData] = useState({
-                inductionWaterRI: '',
-                standard1RI: '',
-                standard2RI: '',
-                standard3RI: '',
-                finishedFoamRI: ''
-            });
-            const [standard, setStandard] = useState('BS5306');
-            const [results, setResults] = useState(null);
-
-            // Calibration instructions based on system type
-            const calibrationInstructions = {
-                '1': {
-                    concentrations: [0.5, 1.0, 1.5],
-                    instructions: [
-                        'Prepare 0.5% solution: Start with 100 mL induction water, extract 0.5 mL and replace with 0.5 mL foam concentrate',
-                        'Prepare 1.0% solution: Start with 100 mL induction water, extract 1.0 mL and replace with 1.0 mL foam concentrate',
-                        'Prepare 1.5% solution: Start with 100 mL induction water, extract 1.5 mL and replace with 1.5 mL foam concentrate'
-                    ]
-                },
-                '3': {
-                    concentrations: [1.0, 3.0, 5.0],
-                    instructions: [
-                        'Prepare 1.0% solution: Start with 100 mL induction water, extract 1.0 mL and replace with 1.0 mL foam concentrate',
-                        'Prepare 3.0% solution: Start with 100 mL induction water, extract 3.0 mL and replace with 3.0 mL foam concentrate',
-                        'Prepare 5.0% solution: Start with 100 mL induction water, extract 5.0 mL and replace with 5.0 mL foam concentrate'
-                    ]
-                },
-                '6': {
-                    concentrations: [3.0, 6.0, 7.0],
-                    instructions: [
-                        'Prepare 3.0% solution: Start with 100 mL induction water, extract 3.0 mL and replace with 3.0 mL foam concentrate',
-                        'Prepare 6.0% solution: Start with 100 mL induction water, extract 6.0 mL and replace with 6.0 mL foam concentrate',
-                        'Prepare 7.0% solution: Start with 100 mL induction water, extract 7.0 mL and replace with 7.0 mL foam concentrate'
-                    ]
-                }
-            };
-
-            // Linear regression calculation
-            const calculateLinearRegression = (x, y) => {
-                const n = x.length;
-                const sumX = x.reduce((a, b) => a + b, 0);
-                const sumY = y.reduce((a, b) => a + b, 0);
-                const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
-                const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
-                
-                const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-                const c = (sumY - m * sumX) / n;
-                
-                // Calculate R²
-                const yMean = sumY / n;
-                const ssTotal = y.reduce((sum, yi) => sum + Math.pow(yi - yMean, 2), 0);
-                const ssResidual = y.reduce((sum, yi, i) => sum + Math.pow(yi - (m * x[i] + c), 2), 0);
-                const r2 = 1 - (ssResidual / ssTotal);
-                
-                return { m, c, r2 };
-            };
-
-            const calculateResults = () => {
-                const concentrations = calibrationInstructions[systemType].concentrations;
-                const riValues = [
-                    parseFloat(testData.standard1RI),
-                    parseFloat(testData.standard2RI),
-                    parseFloat(testData.standard3RI)
-                ];
-                
-                // Linear regression with RI as x and concentration as y
-                const regression = calculateLinearRegression(riValues, concentrations);
-                
-                // Calculate induction percentage from finished foam RI
-                const finishedFoamRI = parseFloat(testData.finishedFoamRI);
-                const inductionPercentage = regression.m * finishedFoamRI + regression.c;
-                
-                // Determine nominal rate based on system type
-                const nominalRate = parseFloat(systemType);
-                
-                // Compliance checking based on standards
-                let compliant = false;
-                let tolerance = '';
-                let lowerLimit = 0;
-                let upperLimit = 0;
-                
-                if (standard === 'NFPA11') {
-                    // NFPA 11: No margin for analytical error
-                    if (nominalRate === 1) {
-                        lowerLimit = 1.0;
-                        upperLimit = 1.3;
-                        tolerance = '1.0 - 1.3%';
-                    } else if (nominalRate === 3) {
-                        lowerLimit = 3.0;
-                        upperLimit = 3.9;
-                        tolerance = '3.0 - 3.9%';
-                    } else if (nominalRate === 6) {
-                        lowerLimit = 6.0;
-                        upperLimit = 7.0;
-                        tolerance = '6.0 - 7.0%';
-                    }
-                    compliant = inductionPercentage >= lowerLimit && inductionPercentage <= upperLimit;
-                } else if (standard === 'BS5306') {
-                    // BS 5306: Includes margin for analytical error
-                    if (nominalRate === 1) {
-                        lowerLimit = 1.0;
-                        upperLimit = 1.25;
-                        tolerance = '1.0 - 1.25%';
-                    } else if (nominalRate === 3) {
-                        lowerLimit = 3.0;
-                        upperLimit = 4.0;
-                        tolerance = '3.0 - 4.0%';
-                    } else if (nominalRate === 6) {
-                        lowerLimit = 5.0;
-                        upperLimit = 6.0;
-                        tolerance = '5.0 - 6.0%';
-                    }
-                    compliant = inductionPercentage >= lowerLimit && inductionPercentage <= upperLimit;
-                }
-                
-                setResults({
-                    regression,
-                    inductionPercentage,
-                    nominalRate,
-                    compliant,
-                    tolerance,
-                    timestamp: new Date().toLocaleString()
-                });
-                
-                setStep(4);
-            };
-
-            const generateReport = () => {
-                if (!results) return;
-                
-                const report = `FOAM CONCENTRATE INDUCTION TEST REPORT
-========================================
-Date & Time: ${results.timestamp}
-Standard: ${standard}
-System Type: ${systemType}% nominal
-
-CALIBRATION DATA
-----------------
-Standard 1 (${calibrationInstructions[systemType].concentrations[0]}%): ${testData.standard1RI}
-Standard 2 (${calibrationInstructions[systemType].concentrations[1]}%): ${testData.standard2RI}
-Standard 3 (${calibrationInstructions[systemType].concentrations[2]}%): ${testData.standard3RI}
-
-LINEAR REGRESSION RESULTS
--------------------------
-Equation: y = ${results.regression.m.toFixed(6)}x + ${results.regression.c.toFixed(6)}
-R² Value: ${results.regression.r2.toFixed(6)}
-
-TEST RESULTS
-------------
-Induction Water RI: ${testData.inductionWaterRI}
-Finished Foam RI: ${testData.finishedFoamRI}
-Calculated Induction %: ${results.inductionPercentage.toFixed(2)}%
-Nominal Rate: ${results.nominalRate}%
-Allowed Tolerance: ${results.tolerance}
-
-COMPLIANCE STATUS
------------------
-${results.compliant ? 'PASS ✓' : 'FAIL ✗'}
-${results.compliant ? 'System is within acceptable limits.' : 'System is outside acceptable limits. Adjustment required.'}
-`;
-                
-                const blob = new Blob([report], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `foam-test-report-${new Date().toISOString().split('T')[0]}.txt`;
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-
-            const resetApp = () => {
-                setStep(1);
-                setSystemType('');
-                setTestData({
-                    inductionWaterRI: '',
-                    standard1RI: '',
-                    standard2RI: '',
-                    standard3RI: '',
-                    finishedFoamRI: ''
-                });
-                setResults(null);
-            };
-
-            return (
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="bg-white rounded-lg shadow-xl p-6 mb-4">
-                            <h1 className="text-3xl font-bold text-indigo-900 mb-2">Foam Concentrate Testing System</h1>
-                            <p className="text-gray-600">Professional induction percentage calculator with compliance checking</p>
-                        </div>
-
-                        {/* Progress indicator */}
-                        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-                            <div className="flex items-center justify-between mb-2">
-                                {['Setup', 'Calibration', 'Testing', 'Results'].map((label, idx) => (
-                                    <div key={idx} className="flex items-center">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                            step > idx + 1 ? 'bg-green-500 text-white' : 
-                                            step === idx + 1 ? 'bg-indigo-600 text-white' : 
-                                            'bg-gray-300 text-gray-600'
-                                        }`}>
-                                            {step > idx + 1 ? '✓' : idx + 1}
-                                        </div>
-                                        <span className="ml-2 text-sm font-medium hidden sm:inline">{label}</span>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div 
-                                    className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${(step / 4) * 100}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Step 1: System Setup */}
-                        {step === 1 && (
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-4">Step 1: System Configuration</h2>
-                                
-                                <div className="mb-6">
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Select Foam System Type
-                                    </label>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        {['1', '3', '6'].map(type => (
-                                            <button
-                                                key={type}
-                                                onClick={() => setSystemType(type)}
-                                                className={`p-4 border-2 rounded-lg font-semibold transition-all ${
-                                                    systemType === type
-                                                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                                                        : 'border-gray-300 hover:border-indigo-300'
-                                                }`}
-                                            >
-                                                {type}% System
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="mb-6">
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Testing Standard
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {['NFPA11', 'BS5306'].map(std => (
-                                            <button
-                                                key={std}
-                                                onClick={() => setStandard(std)}
-                                                className={`p-4 border-2 rounded-lg font-semibold transition-all ${
-                                                    standard === std
-                                                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                                                        : 'border-gray-300 hover:border-indigo-300'
-                                                }`}
-                                            >
-                                                {std}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={() => setStep(2)}
-                                    disabled={!systemType}
-                                    className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
-                                >
-                                    Continue to Calibration
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Step 2: Calibration Wizard */}
-                        {step === 2 && (
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-4">Step 2: Calibration Wizard</h2>
-                                
-                                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
-                                    <p className="font-semibold text-blue-900 mb-2">Prepare Standard Solutions ({systemType}% System)</p>
-                                    <p className="text-sm text-blue-800 mb-3">Use induction water for all dilutions</p>
-                                    <ol className="list-decimal list-inside space-y-2 text-sm text-blue-900">
-                                        {calibrationInstructions[systemType].instructions.map((instruction, idx) => (
-                                            <li key={idx}>{instruction}</li>
-                                        ))}
-                                    </ol>
-                                </div>
-
-                                <div className="mb-4">
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Induction Water RI
-                                    </label>
-                                    <input
-                                        type="number"
-                                        step="0.0001"
-                                        value={testData.inductionWaterRI}
-                                        onChange={(e) => setTestData({...testData, inductionWaterRI: e.target.value})}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                        placeholder="e.g., 1.3330"
-                                    />
-                                </div>
-
-                                <button
-                                    onClick={() => setStep(3)}
-                                    disabled={!testData.inductionWaterRI}
-                                    className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
-                                >
-                                    Continue to Data Entry
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Step 3: Data Logging */}
-                        {step === 3 && (
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-4">Step 3: Automated Data Logging</h2>
-                                
-                                <div className="overflow-x-auto mb-6">
-                                    <table className="w-full border-collapse">
-                                        <thead>
-                                            <tr className="bg-indigo-100">
-                                                <th className="border border-indigo-300 px-4 py-2 text-left">Sample</th>
-                                                <th className="border border-indigo-300 px-4 py-2 text-left">Concentration (%)</th>
-                                                <th className="border border-indigo-300 px-4 py-2 text-left">RI Value</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr className="bg-gray-50">
-                                                <td className="border border-gray-300 px-4 py-2">Standard 1</td>
-                                                <td className="border border-gray-300 px-4 py-2">{calibrationInstructions[systemType].concentrations[0]}%</td>
-                                                <td className="border border-gray-300 px-4 py-2">
-                                                    <input
-                                                        type="number"
-                                                        step="0.0001"
-                                                        value={testData.standard1RI}
-                                                        onChange={(e) => setTestData({...testData, standard1RI: e.target.value})}
-                                                        className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
-                                                        placeholder="1.3335"
-                                                    />
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td className="border border-gray-300 px-4 py-2">Standard 2</td>
-                                                <td className="border border-gray-300 px-4 py-2">{calibrationInstructions[systemType].concentrations[1]}%</td>
-                                                <td className="border border-gray-300 px-4 py-2">
-                                                    <input
-                                                        type="number"
-                                                        step="0.0001"
-                                                        value={testData.standard2RI}
-                                                        onChange={(e) => setTestData({...testData, standard2RI: e.target.value})}
-                                                        className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
-                                                        placeholder="1.3340"
-                                                    />
-                                                </td>
-                                            </tr>
-                                            <tr className="bg-gray-50">
-                                                <td className="border border-gray-300 px-4 py-2">Standard 3</td>
-                                                <td className="border border-gray-300 px-4 py-2">{calibrationInstructions[systemType].concentrations[2]}%</td>
-                                                <td className="border border-gray-300 px-4 py-2">
-                                                    <input
-                                                        type="number"
-                                                        step="0.0001"
-                                                        value={testData.standard3RI}
-                                                        onChange={(e) => setTestData({...testData, standard3RI: e.target.value})}
-                                                        className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
-                                                        placeholder="1.3345"
-                                                    />
-                                                </td>
-                                            </tr>
-                                            <tr className="bg-yellow-50">
-                                                <td className="border border-yellow-300 px-4 py-2 font-semibold">Finished Foam</td>
-                                                <td className="border border-yellow-300 px-4 py-2 font-semibold">To be calculated</td>
-                                                <td className="border border-yellow-300 px-4 py-2">
-                                                    <input
-                                                        type="number"
-                                                        step="0.0001"
-                                                        value={testData.finishedFoamRI}
-                                                        onChange={(e) => setTestData({...testData, finishedFoamRI: e.target.value})}
-                                                        className="w-full px-2 py-1 border border-yellow-400 rounded focus:ring-2 focus:ring-indigo-500 font-semibold"
-                                                        placeholder="1.3342"
-                                                    />
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={() => setStep(2)}
-                                        className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all"
-                                    >
-                                        Back
-                                    </button>
-                                    <button
-                                        onClick={calculateResults}
-                                        disabled={!testData.standard1RI || !testData.standard2RI || !testData.standard3RI || !testData.finishedFoamRI}
-                                        className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <Calculator size={20} />
-                                        Calculate Results
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 4: Results */}
-                        {step === 4 && results && (
-                            <div className="bg-white rounded-lg shadow-md p-6">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-4">Step 4: Test Results</h2>
-                                
-                                {/* Compliance Status */}
-                                <div className={`border-l-4 p-4 mb-6 ${
-                                    results.compliant 
-                                        ? 'bg-green-50 border-green-500' 
-                                        : 'bg-red-50 border-red-500'
-                                }`}>
-                                    <div className="flex items-center gap-3">
-                                        {results.compliant ? (
-                                            <CheckCircle className="text-green-600" size={32} />
-                                        ) : (
-                                            <AlertCircle className="text-red-600" size={32} />
-                                        )}
-                                        <div>
-                                            <h3 className={`text-xl font-bold ${
-                                                results.compliant ? 'text-green-900' : 'text-red-900'
-                                            }`}>
-                                                {results.compliant ? 'PASS - System Compliant' : 'FAIL - System Non-Compliant'}
-                                            </h3>
-                                            <p className={results.compliant ? 'text-green-800' : 'text-red-800'}>
-                                                {results.compliant 
-                                                    ? 'System is operating within acceptable limits.' 
-                                                    : 'System requires adjustment to meet standards.'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Key Results */}
-                                <div className="grid grid-cols-2 gap-4 mb-6">
-                                    <div className="bg-indigo-50 p-4 rounded-lg">
-                                        <p className="text-sm text-indigo-600 font-semibold">Calculated Induction %</p>
-                                        <p className="text-3xl font-bold text-indigo-900">{results.inductionPercentage.toFixed(2)}%</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <p className="text-sm text-gray-600 font-semibold">Nominal Rate</p>
-                                        <p className="text-3xl font-bold text-gray-900">{results.nominalRate}%</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <p className="text-sm text-gray-600 font-semibold">Standard</p>
-                                        <p className="text-xl font-bold text-gray-900">{standard}</p>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <p className="text-sm text-gray-600 font-semibold">Allowed Tolerance</p>
-                                        <p className="text-xl font-bold text-gray-900">{results.tolerance}</p>
-                                    </div>
-                                </div>
-
-                                {/* Regression Details */}
-                                <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                                    <h3 className="font-semibold text-blue-900 mb-2">Linear Regression Results</h3>
-                                    <p className="text-blue-800 font-mono text-sm mb-1">
-                                        y = {results.regression.m.toFixed(6)}x + {results.regression.c.toFixed(6)}
-                                    </p>
-                                    <p className="text-blue-800 text-sm">
-                                        R² = {results.regression.r2.toFixed(6)} (Goodness of fit)
-                                    </p>
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={generateReport}
-                                        className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <Download size={20} />
-                                        Download Report
-                                    </button>
-                                    <button
-                                        onClick={resetApp}
-                                        className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-semibold hover:bg-gray-700 transition-all"
-                                    >
-                                        New Test
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+        <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+            <div class="flex items-center justify-between mb-2">
+                <div v-for="(label, idx) in ['Setup', 'Calibration', 'Testing', 'Results']" :key="idx" class="flex items-center">
+                    <div :class="[
+                        'w-8 h-8 rounded-full flex items-center justify-center font-bold',
+                        step > idx + 1 ? 'bg-green-500 text-white' : (step === idx + 1 ? 'bg-indigo-600 text-white' : 'bg-gray-300 text-gray-600')
+                    ]">
+                        {{ step > idx + 1 ? '✓' : idx + 1 }}
                     </div>
+                    <span class="ml-2 text-sm font-medium hidden sm:inline">{{ label }}</span>
                 </div>
-            );
-        };
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" :style="{ width: (step / 4) * 100 + '%' }"></div>
+            </div>
+        </div>
 
-        ReactDOM.render(<FoamTestingApp />, document.getElementById('root'));
+        <div v-if="step === 1" class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Step 1: System Configuration</h2>
+            
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Select Foam System Type</label>
+                <div class="grid grid-cols-3 gap-4">
+                    <button v-for="type in ['1', '3', '6']" :key="type" @click="systemType = type"
+                        :class="['p-4 border-2 rounded-lg font-semibold transition-all', systemType === type ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:border-indigo-300']">
+                        {{ type }}% System
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Testing Standard</label>
+                <div class="grid grid-cols-2 gap-4">
+                    <button v-for="std in ['NFPA11', 'BS5306']" :key="std" @click="standard = std"
+                        :class="['p-4 border-2 rounded-lg font-semibold transition-all', standard === std ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 hover:border-indigo-300']">
+                        {{ std }}
+                    </button>
+                </div>
+            </div>
+
+            <button @click="step = 2" :disabled="!systemType" class="w-full bg-indigo-600 text-white py-4 rounded-lg font-bold hover:bg-indigo-700 disabled:bg-gray-300 transition-all">
+                Continue to Calibration
+            </button>
+        </div>
+
+        <div v-if="step === 2" class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Step 2: Calibration Wizard</h2>
+            
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                <p class="font-bold text-blue-900 mb-2">Prepare Standard Solutions ({{ systemType }}% System)</p>
+                <ul class="list-disc list-inside space-y-2 text-sm text-blue-800">
+                    <li v-for="instr in currentInstructions.instructions">{{ instr }}</li>
+                </ul>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Induction Water RI (Reference Point)</label>
+                <input type="number" step="0.1" v-model="testData.inductionWaterRI" class="w-full p-4 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="e.g. 4.4">
+            </div>
+
+            <button @click="step = 3" :disabled="!testData.inductionWaterRI" class="w-full bg-indigo-600 text-white py-4 rounded-lg font-bold hover:bg-indigo-700">
+                Continue to Data Entry
+            </button>
+        </div>
+
+        <div v-if="step === 3" class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Step 3: RI Data Entry</h2>
+            
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="p-3 text-sm font-bold text-gray-600">Sample</th>
+                            <th class="p-3 text-sm font-bold text-gray-600">Conc %</th>
+                            <th class="p-3 text-sm font-bold text-gray-600">RI Reading (Brix)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <tr v-for="(conc, i) in currentInstructions.concentrations" :key="i">
+                            <td class="p-3 text-sm">Standard {{ i + 1 }}</td>
+                            <td class="p-3 font-mono">{{ conc }}%</td>
+                            <td class="p-3">
+                                <input type="number" step="0.1" v-model="testData['standard' + (i+1) + 'RI']" class="w-full p-2 border rounded">
+                            </td>
+                        </tr>
+                        <tr class="bg-yellow-50">
+                            <td class="p-3 font-bold">Produced Foam</td>
+                            <td class="p-3 text-xs text-gray-500 italic">Target</td>
+                            <td class="p-3">
+                                <input type="number" step="0.1" v-model="testData.finishedFoamRI" class="w-full p-2 border-2 border-yellow-400 rounded font-bold">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex gap-4">
+                <button @click="step = 2" class="flex-1 bg-gray-200 py-4 rounded-lg font-bold">Back</button>
+                <button @click="calculateResults" :disabled="!isStep3Complete" class="flex-1 bg-indigo-600 text-white py-4 rounded-lg font-bold">Calculate Results</button>
+            </div>
+        </div>
+
+        <div v-if="step === 4 && results" class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Step 4: Analysis Results</h2>
+            
+            <div :class="['p-6 rounded-xl text-center mb-6', results.compliant ? 'bg-green-100 text-green-900 border-2 border-green-500' : 'bg-red-100 text-red-900 border-2 border-red-500']">
+                <p class="text-sm font-bold uppercase tracking-widest">{{ results.compliant ? 'System Passed' : 'System Failed' }}</p>
+                <p class="text-6xl font-black my-2">{{ results.inductionPercentage.toFixed(2) }}%</p>
+                <p class="text-sm font-medium">Standard Allowed: {{ results.tolerance }}</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-xs text-gray-500 uppercase font-bold">Standard</p>
+                    <p class="text-lg font-bold">{{ standard }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-xs text-gray-500 uppercase font-bold">Data Reliability (R²)</p>
+                    <p :class="['text-lg font-bold', results.regression.r2 > 0.98 ? 'text-green-600' : 'text-orange-600']">
+                        {{ (results.regression.r2 * 100).toFixed(2) }}%
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button @click="generateReport" class="w-full bg-green-600 text-white py-4 rounded-lg font-bold hover:bg-green-700">Download Text Report</button>
+                <button @click="resetApp" class="w-full bg-gray-600 text-white py-4 rounded-lg font-bold">Start New Test</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    step: 1,
+                    systemType: '',
+                    standard: 'NFPA11',
+                    testData: {
+                        inductionWaterRI: '',
+                        standard1RI: '',
+                        standard2RI: '',
+                        standard3RI: '',
+                        finishedFoamRI: ''
+                    },
+                    results: null,
+                    calibrationInstructions: {
+                        '1': {
+                            concentrations: [0.5, 1.0, 1.5],
+                            instructions: [
+                                'Prepare 0.5% solution (extract 0.5ml replace with 0.5ml concentrate)',
+                                'Prepare 1.0% solution (extract 1.0ml replace with 1.0ml concentrate)',
+                                'Prepare 1.5% solution (extract 1.5ml replace with 1.5ml concentrate)'
+                            ]
+                        },
+                        '3': {
+                            concentrations: [1.0, 3.0, 5.0],
+                            instructions: [
+                                'Prepare 1.0% solution (extract 1.0ml replace with 1.0ml concentrate)',
+                                'Prepare 3.0% solution (extract 3.0ml replace with 3.0ml concentrate)',
+                                'Prepare 5.0% solution (extract 5.0ml replace with 5.0ml concentrate)'
+                            ]
+                        },
+                        '6': {
+                            concentrations: [3.0, 6.0, 7.0],
+                            instructions: [
+                                'Prepare 3.0% solution (extract 3.0ml replace with 3.0ml concentrate)',
+                                'Prepare 6.0% solution (extract 6.0ml replace with 6.0ml concentrate)',
+                                'Prepare 7.0% solution (extract 7.0ml replace with 7.0ml concentrate)'
+                            ]
+                        }
+                    }
+                }
+            },
+            computed: {
+                currentInstructions() {
+                    return this.systemType ? this.calibrationInstructions[this.systemType] : { concentrations: [], instructions: [] };
+                },
+                isStep3Complete() {
+                    return this.testData.standard1RI && this.testData.standard2RI && this.testData.standard3RI && this.testData.finishedFoamRI;
+                }
+            },
+            methods: {
+                calculateLinearRegression(x, y) {
+                    const n = x.length;
+                    const sumX = x.reduce((a, b) => a + b, 0);
+                    const sumY = y.reduce((a, b) => a + b, 0);
+                    const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+                    const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+                    const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+                    const c = (sumY - m * sumX) / n;
+                    const yMean = sumY / n;
+                    const ssTotal = y.reduce((sum, yi) => sum + Math.pow(yi - yMean, 2), 0);
+                    const ssResidual = y.reduce((sum, yi, i) => sum + Math.pow(yi - (m * x[i] + c), 2), 0);
+                    return { m, c, r2: 1 - (ssResidual / ssTotal) };
+                },
+                calculateResults() {
+                    const concentrations = [0, ...this.currentInstructions.concentrations];
+                    const riValues = [
+                        parseFloat(this.testData.inductionWaterRI),
+                        parseFloat(this.testData.standard1RI),
+                        parseFloat(this.testData.standard2RI),
+                        parseFloat(this.testData.standard3RI)
+                    ];
+                    
+                    // The manual maps RI (x) to Concentration (y)
+                    const regression = this.calculateLinearRegression(riValues, concentrations);
+                    const inductionPercentage = regression.m * parseFloat(this.testData.finishedFoamRI) + regression.c;
+                    const nominal = parseFloat(this.systemType);
+                    
+                    let compliant = false;
+                    let tolerance = '';
+                    
+                    if (this.standard === 'NFPA11') {
+                        const low = nominal;
+                        const high = nominal === 1 ? 1.3 : (nominal === 3 ? 3.9 : 7.0);
+                        tolerance = `${low}% - ${high}%`;
+                        compliant = inductionPercentage >= low && inductionPercentage <= high;
+                    } else {
+                        const low = nominal === 6 ? 5.0 : nominal;
+                        const high = nominal === 1 ? 1.25 : (nominal === 3 ? 4.0 : 6.0);
+                        tolerance = `${low}% - ${high}%`;
+                        compliant = inductionPercentage >= low && inductionPercentage <= high;
+                    }
+
+                    this.results = { regression, inductionPercentage, compliant, tolerance, timestamp: new Date().toLocaleString() };
+                    this.step = 4;
+                },
+                generateReport() {
+                    const report = `FOAM TEST REPORT\n================\nDate: ${this.results.timestamp}\nSystem: ${this.systemType}%\nResult: ${this.results.inductionPercentage.toFixed(2)}%\nVerdict: ${this.results.compliant ? 'PASS' : 'FAIL'}\nLinearity (R2): ${this.results.regression.r2.toFixed(4)}`;
+                    const blob = new Blob([report], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `FoamReport-${new Date().toISOString().split('T')[0]}.txt`;
+                    a.click();
+                },
+                resetApp() {
+                    this.step = 1;
+                    this.testData = { inductionWaterRI: '', standard1RI: '', standard2RI: '', standard3RI: '', finishedFoamRI: '' };
+                    this.results = null;
+                }
+            }
+        }).mount('#app')
     </script>
 </body>
 </html>
