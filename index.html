@@ -3,217 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flare | Foam Induction Testing System</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <title>Foam Induction Analysis</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Load Ubuntu from Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        flare: {
-                            orange: '#ed8b00',
-                            green: '#00af66',
-                            dark: '#24282b',
-                            'green-hover': '#009658',
-                        }
-                    },
-                    fontFamily: {
-                        'brand-heading': ['Magistral', 'Ubuntu', 'sans-serif'], 
-                        'brand-body': ['Ubuntu', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Ubuntu', sans-serif; }
-        
+        body { 
+            font-family: 'Ubuntu', sans-serif; 
+            background: radial-gradient(circle at 10% 10%, #f1f5f9 0%, #e2e8f0 100%);
+        }
         .brand-heading {
             font-family: 'Magistral', 'Ubuntu', sans-serif;
-            font-weight: 700;
-            font-style: italic;
-        }
-
-        .step-transition-enter-active, .step-transition-leave-active { transition: opacity 0.3s ease; }
-        .step-transition-enter-from, .step-transition-leave-to { opacity: 0; }
-        
-        input[type="number"]:focus {
-            border-color: #00af66;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 175, 102, 0.1);
         }
     </style>
 </head>
-<body class="bg-slate-50 text-flare-dark min-h-screen">
-    <div id="app" class="max-w-4xl mx-auto p-4 pb-12">
-        
-        <!-- Prominent Logo Header -->
-        <header class="flex flex-col items-center py-10">
-            <img src="https://cdn.prod.website-files.com/646b6d99c496d836a5335742/69d90c3be91bf51e72bba1fa_Flare%20Logo.png" 
-                 alt="Flare Logo" 
-                 class="h-20 w-auto mb-4">
+<body class="text-flare-dark min-h-screen relative overflow-x-hidden">
+    
+    <!-- Watermark Background Logo (Icon only) -->
+    <div class="fixed bottom-[-50px] right-[-50px] opacity-[0.03] z-0 pointer-events-none">
+        <img src="https://cdn.prod.website-files.com/646b6d99c496d836a5335742/66866d8bf28197d661131949_Flare%20Webclip.png" 
+             alt="Flare Watermark" 
+             class="w-[400px] h-[400px]">
+    </div>
+
+    <div id="app" class="max-w-4xl mx-auto p-4 pb-12 relative z-10">
+
+        <!-- Prominent Logo Header Card -->
+        <header class="flex flex-col items-center py-6 mb-6">
+            <div class="bg-white rounded-3xl shadow-lg border border-gray-100 px-16 py-8">
+                <img src="https://cdn.prod.website-files.com/646b6d99c496d836a5335742/69d90c3be91bf51e72bba1fa_Flare%20Logo.png" 
+                     alt="Flare Logo" 
+                     class="h-28 w-auto">
+            </div>
         </header>
 
         <!-- Main Title Card -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-6 text-center">
+        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-8 mb-6 text-center">
             <h1 class="brand-heading text-4xl text-flare-green mb-3">Foam Induction Analysis</h1>
             <p class="text-gray-600 max-w-lg mx-auto">Field testing and calculation tool for safety technicians.</p>
         </div>
 
         <!-- Progress Tracker -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+        <div class="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
             <div class="flex items-center justify-between mb-3 relative px-4">
                 <div class="absolute top-5 left-8 right-8 h-0.5 bg-gray-100 -translate-y-1/2 z-0"></div>
-                
-                <div v-for="(label, idx) in ['Setup', 'Calibration', 'Testing', 'Results']" :key="idx" class="flex flex-col items-center z-10 flex-1">
-                    <div :class="[
-                        'w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 transition-colors duration-300',
-                        step > idx + 1 ? 'bg-flare-green border-flare-green text-white' : 
-                        (step === idx + 1 ? 'bg-white border-flare-green text-flare-green ring-4 ring-green-50' : 'bg-white border-gray-200 text-gray-400')
-                    ]">
-                        <span v-if="step > idx + 1">✓</span>
-                        <span v-else>{{ idx + 1 }}</span>
+                <!-- Step Indicators -->
+                <div v-for="i in 4" :key="i" class="relative z-10 flex flex-col items-center">
+                    <div :class="['w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300', step >= i ? 'bg-flare-green text-white shadow-md' : 'bg-gray-100 text-gray-400']">
+                        {{ i }}
                     </div>
-                    <span :class="['mt-2 text-xs font-medium', step >= idx + 1 ? 'text-flare-dark font-semibold' : 'text-gray-400']">{{ label }}</span>
                 </div>
-            </div>
-            <div class="w-full bg-gray-100 rounded-full h-1.5 mt-4">
-                <div class="bg-flare-green h-1.5 rounded-full transition-all duration-700" :style="{ width: ((step-1) / 3) * 100 + '%' }"></div>
             </div>
         </div>
 
-        <!-- Step Sections -->
-        <transition name="step-transition" mode="out-in">
+        <!-- Step 1: Configuration -->
+        <div v-if="step === 1" key="step1" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+            <h2 class="brand-heading text-2xl text-flare-dark mb-6">Step 1: Configuration</h2>
             
-            <!-- Step 1: Configuration -->
-            <div v-if="step === 1" key="step1" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-                <h2 class="brand-heading text-2xl text-flare-dark mb-6">Step 1: Configuration</h2>
-                
-                <div class="mb-8">
-                    <label class="block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider text-xs">System Type</label>
-                    <div class="grid grid-cols-3 gap-4">
-                        <button v-for="type in ['1', '3', '6']" :key="type" @click="systemType = type"
-                            :class="['p-5 border-2 rounded-xl font-bold text-lg transition-all', 
-                                    systemType === type ? 'border-flare-green bg-green-50 text-flare-green shadow-inner' : 'border-gray-100 hover:border-green-200 text-gray-600']">
-                            {{ type }}% System
-                        </button>
-                    </div>
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">System Induction Nominal Target</label>
+                <div class="grid grid-cols-3 gap-4">
+                    <button v-for="type in ['1', '3', '6']" :key="type" 
+                            @click="systemType = type"
+                            :class="['py-4 rounded-xl font-bold border-2 transition', systemType === type ? 'border-flare-green bg-green-50/50 text-flare-green' : 'border-gray-100 hover:border-gray-200']">
+                        {{ type }}%
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-8">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Standard / Regulation</label>
+                <select v-model="standard" class="w-full p-4 border-2 border-gray-100 rounded-xl bg-white">
+                    <option value="BS5306">BS5306 Target Parameters</option>
+                    <option value="NFPA">NFPA / General Target Parameters</option>
+                </select>
+            </div>
+
+            <button @click="step = 2" :disabled="!systemType" class="w-full bg-flare-green text-white py-4 rounded-xl font-bold text-lg hover:bg-flare-green-hover shadow-md transition disabled:opacity-50">
+                Continue to Calibration
+            </button>
+        </div>
+
+        <!-- Step 2: Calibration -->
+        <div v-if="step === 2" key="step2" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+            <h2 class="brand-heading text-2xl text-flare-dark mb-6">Step 2: Calibration</h2>
+
+            <div class="bg-slate-50 border border-gray-100 rounded-xl p-6 mb-8 relative">
+                <div class="absolute top-2 right-2 opacity-[0.05]">
+                    <img src="https://cdn.prod.website-files.com/646b6d99c496d836a5335742/66866d8bf28197d661131949_Flare%20Webclip.png" alt="" class="w-16 h-16">
                 </div>
 
-                <div class="mb-10">
-                    <label class="block text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider text-xs">Testing Standard</label>
-                    <div class="grid grid-cols-2 gap-4">
-                        <button v-for="std in ['BS5306', 'NFPA11']" :key="std" @click="standard = std"
-                            :class="['p-4 border-2 rounded-xl font-bold transition-all', 
-                                    standard === std ? 'border-flare-green bg-green-50 text-flare-green shadow-inner' : 'border-gray-100 hover:border-green-200 text-gray-600']">
-                            {{ std }}
-                        </button>
-                    </div>
-                </div>
+                <p class="font-bold text-flare-green mb-3 uppercase text-xs tracking-widest relative z-10">Instructions ({{ systemType }}% System)</p>
+                <ul class="list-none space-y-3 text-sm text-gray-700 relative z-10">
+                    <li v-for="instr in currentInstructions.instructions" :key="instr" class="flex items-start">
+                        <span class="w-2 h-2 rounded-full bg-flare-green mt-1.5 mr-3 shrink-0"></span>
+                        {{ instr }}
+                    </li>
+                </ul>
+            </div>
 
-                <button @click="step = 2" :disabled="!systemType" class="w-full bg-flare-green text-white py-4 rounded-xl font-bold text-lg hover:bg-flare-green-hover disabled:bg-gray-200 transition-all shadow-md">
-                    Start Calibration
+            <div class="mb-8 relative">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Induction Water RI (Brix Reference)</label>
+                <input type="number" step="0.1" v-model="testData.inductionWaterRI" class="w-full p-4 border-2 border-gray-100 rounded-xl transition bg-white/50" placeholder="e.g. 4.4">
+            </div>
+
+            <div class="flex gap-4">
+                <button @click="step = 1" class="flex-1 bg-gray-100 text-gray-600 py-4 rounded-xl font-bold hover:bg-gray-200">Back</button>
+                <button @click="step = 3" :disabled="!testData.inductionWaterRI" class="flex-1 bg-flare-green text-white py-4 rounded-xl font-bold text-lg hover:bg-flare-green-hover shadow-md transition disabled:opacity-50">
+                    Proceed to Data Entry
                 </button>
             </div>
+        </div>
 
-            <!-- Step 2: Calibration -->
-            <div v-if="step === 2" key="step2" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-                <h2 class="brand-heading text-2xl text-flare-dark mb-6">Step 2: Calibration</h2>
-                
-                <div class="bg-slate-50 border border-gray-100 rounded-xl p-6 mb-8">
-                    <p class="font-bold text-flare-green mb-3 uppercase text-xs tracking-widest">Instructions ({{ systemType }}% System)</p>
-                    <ul class="list-none space-y-3 text-sm text-gray-700">
-                        <li v-for="instr in currentInstructions.instructions" class="flex items-start">
-                            <span class="w-2 h-2 rounded-full bg-flare-green mt-1.5 mr-3 shrink-0"></span>
-                            {{ instr }}
-                        </li>
-                    </ul>
-                </div>
+        <!-- Step 3: RI Data Entry -->
+        <div v-if="step === 3" key="step3" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+            <h2 class="brand-heading text-2xl text-flare-dark mb-6">Step 3: RI Data Entry</h2>
 
-                <div class="mb-8">
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Induction Water RI (Brix Reference)</label>
-                    <input type="number" step="0.1" v-model="testData.inductionWaterRI" class="w-full p-4 border-2 border-gray-100 rounded-xl transition" placeholder="e.g. 4.4">
-                </div>
-
-                <button @click="step = 3" :disabled="!testData.inductionWaterRI" class="w-full bg-flare-green text-white py-4 rounded-xl font-bold text-lg hover:bg-flare-green-hover shadow-md transition">
-                    Continue to Data Entry
-                </button>
+            <div class="overflow-hidden border border-gray-100 rounded-xl mb-8 bg-white/50">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 border-b border-gray-100">
+                        <tr>
+                            <th class="p-4 text-xs font-bold uppercase text-gray-500 tracking-wider">Sample Type</th>
+                            <th class="p-4 text-xs font-bold uppercase text-gray-500 tracking-wider">Conc %</th>
+                            <th class="p-4 text-xs font-bold uppercase text-gray-500 tracking-wider">RI Reading</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr v-for="(conc, i) in currentInstructions.concentrations" :key="i">
+                            <td class="p-4 text-sm font-medium text-gray-700">Standard {{ i + 1 }}</td>
+                            <td class="p-4 font-mono text-sm">{{ conc }}%</td>
+                            <td class="p-4">
+                                <input type="number" step="0.1" v-model="testData['standard' + (i+1) + 'RI']" class="w-full p-2 border border-gray-200 rounded-lg">
+                            </td>
+                        </tr>
+                        <tr class="bg-orange-50/30">
+                            <td class="p-4 font-bold text-flare-orange">Finished Foam</td>
+                            <td class="p-4 text-xs text-gray-400 italic font-medium">Field Sample</td>
+                            <td class="p-4">
+                                <input type="number" step="0.1" v-model="testData.finishedFoamRI" class="w-full p-3 border-2 border-flare-orange rounded-lg font-bold text-flare-dark focus:ring-flare-orange focus:border-flare-orange bg-white shadow-sm">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <!-- Step 3: RI Data Entry -->
-            <div v-if="step === 3" key="step3" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-                <h2 class="brand-heading text-2xl text-flare-dark mb-6">Step 3: RI Data Entry</h2>
-                
-                <div class="overflow-hidden border border-gray-100 rounded-xl mb-8">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 border-b border-gray-100">
-                            <tr>
-                                <th class="p-4 text-xs font-bold uppercase text-gray-500 tracking-wider">Sample Type</th>
-                                <th class="p-4 text-xs font-bold uppercase text-gray-500 tracking-wider">Conc %</th>
-                                <th class="p-4 text-xs font-bold uppercase text-gray-500 tracking-wider">RI Reading</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <tr v-for="(conc, i) in currentInstructions.concentrations" :key="i">
-                                <td class="p-4 text-sm font-medium text-gray-700">Standard {{ i + 1 }}</td>
-                                <td class="p-4 font-mono text-sm">{{ conc }}%</td>
-                                <td class="p-4">
-                                    <input type="number" step="0.1" v-model="testData['standard' + (i+1) + 'RI']" class="w-full p-2 border border-gray-200 rounded-lg">
-                                </td>
-                            </tr>
-                            <tr class="bg-orange-50/30">
-                                <td class="p-4 font-bold text-flare-orange">Finished Foam</td>
-                                <td class="p-4 text-xs text-gray-400 italic font-medium">Field Sample</td>
-                                <td class="p-4">
-                                    <input type="number" step="0.1" v-model="testData.finishedFoamRI" class="w-full p-3 border-2 border-flare-orange rounded-lg font-bold text-flare-dark focus:ring-flare-orange focus:border-flare-orange bg-white shadow-sm">
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="flex gap-4">
+                <button @click="step = 2" class="flex-1 bg-gray-100 text-gray-600 py-4 rounded-xl font-bold hover:bg-gray-200">Back</button>
+                <button @click="calculateResults" :disabled="!isStep3Complete" class="flex-1 bg-flare-green text-white py-4 rounded-xl font-bold hover:bg-flare-green-hover shadow-md disabled:opacity-50">Calculate Result</button>
+            </div>
+        </div>
 
-                <div class="flex gap-4">
-                    <button @click="step = 2" class="flex-1 bg-gray-100 text-gray-600 py-4 rounded-xl font-bold hover:bg-gray-200">Back</button>
-                    <button @click="calculateResults" :disabled="!isStep3Complete" class="flex-1 bg-flare-green text-white py-4 rounded-xl font-bold hover:bg-flare-green-hover shadow-md">Calculate Result</button>
+        <!-- Step 4: Results -->
+        <div v-if="step === 4 && results" key="step4" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+            <h2 class="brand-heading text-2xl text-flare-dark mb-6">Step 4: Final Analysis</h2>
+            
+            <div :class="['p-8 rounded-2xl text-center mb-8 border-2 transition-all', results.compliant ? 'bg-green-50 text-flare-green border-green-200' : 'bg-red-50 text-red-600 border-red-200']">
+                <p class="text-xs font-bold uppercase tracking-widest">{{ results.compliant ? 'Pass' : 'Fail' }}</p>
+                <p class="text-7xl font-black my-4">{{ results.inductionPercentage.toFixed(2) }}%</p>
+                <p class="text-sm font-medium opacity-80">Limit ({{ standard }}): {{ results.tolerance }}</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="bg-slate-50 p-5 rounded-xl border border-gray-100">
+                    <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">Standard Reference</p>
+                    <p class="text-lg font-bold text-flare-dark">{{ standard }}</p>
+                </div>
+                <div class="bg-slate-50 p-5 rounded-xl border border-gray-100">
+                    <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">Data Reliability (R²)</p>
+                    <p :class="['text-lg font-bold', results.regression.r2 > 0.98 ? 'text-flare-green' : 'text-flare-orange']">
+                        {{ (results.regression.r2 * 100).toFixed(2) }}%
+                    </p>
                 </div>
             </div>
 
-            <!-- Step 4: Results -->
-            <div v-if="step === 4 && results" key="step4" class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-                <h2 class="brand-heading text-2xl text-flare-dark mb-6">Step 4: Final Analysis</h2>
-                
-                <div :class="['p-8 rounded-2xl text-center mb-8 border-2 transition-all', results.compliant ? 'bg-green-50 text-flare-green border-green-200' : 'bg-red-50 text-red-600 border-red-200']">
-                    <p class="text-xs font-bold uppercase tracking-widest">{{ results.compliant ? 'Pass' : 'Fail' }}</p>
-                    <p class="text-7xl font-black my-4">{{ results.inductionPercentage.toFixed(2) }}%</p>
-                    <p class="text-sm font-medium opacity-80">Limit ({{ standard }}): {{ results.tolerance }}</p>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 mb-8">
-                    <div class="bg-slate-50 p-5 rounded-xl border border-gray-100">
-                        <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">Standard Reference</p>
-                        <p class="text-lg font-bold text-flare-dark">{{ standard }}</p>
-                    </div>
-                    <div class="bg-slate-50 p-5 rounded-xl border border-gray-100">
-                        <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">Data Reliability (R²)</p>
-                        <p :class="['text-lg font-bold', results.regression.r2 > 0.98 ? 'text-flare-green' : 'text-flare-orange']">
-                            {{ (results.regression.r2 * 100).toFixed(2) }}%
-                        </p>
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-3">
-                    <button @click="generateReport" class="w-full bg-flare-green text-white py-4 rounded-xl font-bold hover:bg-flare-green-hover shadow-md">Download Report</button>
-                    <button @click="resetApp" class="w-full bg-gray-100 text-gray-600 py-3 rounded-xl font-semibold hover:bg-gray-200">Start New Test</button>
-                </div>
+            <div class="flex flex-col gap-3">
+                <button @click="generateReport" class="w-full bg-flare-green text-white py-4 rounded-xl font-bold hover:bg-flare-green-hover shadow-md">Download Report</button>
+                <button @click="resetApp" class="w-full bg-gray-100 text-gray-600 py-3 rounded-xl font-semibold hover:bg-gray-200">Start New Test</button>
             </div>
-        </transition>
+        </div>
 
         <footer class="text-center mt-12 text-[10px] text-gray-300 uppercase tracking-[0.2em] font-bold">
             Flare Field Safety Tools — Confident Protection
@@ -306,7 +276,7 @@
                     
                     if (this.standard === 'BS5306') {
                         const low = nominal === 6 ? 5.0 : nominal;
-                        const high = nominal === 1 ? 1.25 : (nominal === 3 ? 4.0 : 6.0);
+                        const high = nominal === 1 ? 1.25 : (nominal === 3 ? 3.9 : 6.0);
                         tolerance = `${low}% - ${high}%`;
                         compliant = inductionPercentage >= low && inductionPercentage <= high;
                     } else {
@@ -338,3 +308,5 @@
     </script>
 </body>
 </html>
+
+```
